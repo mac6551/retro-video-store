@@ -31,8 +31,10 @@ def get_customers():
 @customer_bp.route("/<id>", methods = ["GET"])
 def get_one_customer(id):
     customer = valid_id(Customer, id)
-
+    
     if not customer: 
-        return {"message": f"Customer {id} not found"}, 404
+        return {"message": f"Customer {id} was not found"}, 404
+
+    customer = customer.to_dict()
 
     return customer, 200

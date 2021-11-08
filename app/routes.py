@@ -19,7 +19,7 @@ def valid_id(model, id):
         id = int(id)
     except:
         abort(400, {"error": "invalid id"})
-    return model.query.get_or_404(id)
+    return model.query.get(id)
 
 @customer_bp.route("", methods = ["GET"])
 def get_customers():
@@ -31,4 +31,8 @@ def get_customers():
 @customer_bp.route("/<id>", methods = ["GET"])
 def get_one_customer(id):
     customer = valid_id(Customer, id)
+
+    if not customer: 
+        return {"message": f"Customer {id} not found"}, 404
+
     return customer, 200

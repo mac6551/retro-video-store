@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, abort
 from app.models.customer import Customer
 from app.models.video import Video
 from app import db
-from datetime import date
+from datetime import date, datetime
 from dotenv import load_dotenv
 import requests
 import os
@@ -38,3 +38,24 @@ def get_one_customer(id):
     customer = customer.to_dict()
 
     return customer, 200
+
+@customer_bp.route("", methods = ["POST"])
+def create_customer():
+    request_body = request.get_json()
+
+    if "name" not in request_body:
+        return {"details": "Request body must include name."}, 400
+    if "phone" not in request_body:
+        return {"details": "Request body must include phone."}, 400
+    if "postal_code" not in request_body:
+        return {"details": "Request body must include postal_code."}, 400
+    
+    new_customer = Customer(name = request_body["name"],
+                            phone = request_body["phone"],
+                            postal_code = request_body["postal_code"])
+                            # register_at = datetime.date)
+
+    db.session.add(new_customer)
+    db.session.commit()
+    
+    return {"id": new_customer.id}, 201

@@ -1,21 +1,16 @@
 from flask import Blueprint, jsonify, request, abort
-from flask.wrappers import Request
+# from flask.wrappers import Request
 from app.models.customer import Customer
 from app.models.video import Video
 from app import db
-from datetime import date, datetime
 from dotenv import load_dotenv
-import requests
-import os
 
 load_dotenv()
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
 
 def valid_id(model, id):
-    """If ID is an int, returns the model object with that ID.
-        If ID is not an int, returns 400.
-        If model object with that ID doesn't exist, returns 404."""
+    """Returns instance of model with matching ID."""
     try:
         id = int(id)
     except:
@@ -24,6 +19,7 @@ def valid_id(model, id):
 
 @customer_bp.route("", methods = ["GET"])
 def get_customers():
+    """Returns list of dictionaries of customer info."""
     customers = Customer.query.all()
     customers_response = [customer.to_dict() for customer in customers]
 
@@ -31,6 +27,7 @@ def get_customers():
 
 @customer_bp.route("/<id>", methods = ["GET"])
 def get_one_customer(id):
+    """Returns dictionary of customer info with matching ID."""
     customer = valid_id(Customer, id)
     
     if not customer: 
@@ -42,6 +39,7 @@ def get_one_customer(id):
 
 @customer_bp.route("", methods = ["POST"])
 def create_customer():
+    """Adds customer to database and returns new customer ID and 201."""
     request_body = request.get_json()
 
     if "name" not in request_body:
@@ -61,6 +59,7 @@ def create_customer():
 
 @customer_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_customer(id):
+    """Deletes customer and returns ID of deleted customer."""
     customer = valid_id(Customer, id)
 
     if not customer: 
@@ -72,6 +71,8 @@ def delete_one_customer(id):
 
 @customer_bp.route("/<id>", methods = ["PUT"])
 def update_one_customer(id):
+    """Updates cusomter in database and \
+        returns dictionary with updated customer infomation."""
     customer = valid_id(Customer, id)
 
     if not customer: 
@@ -94,6 +95,7 @@ def update_one_customer(id):
 
 @video_bp.route("", methods = ["GET"])
 def get_videos():
+    """Returns list of dictionaries of video info"""
     videos = Video.query.all()
     videos_response = [video.to_dict() for video in videos]
 
@@ -102,6 +104,7 @@ def get_videos():
 
 @video_bp.route("/<id>", methods = ["GET"])
 def get_one_video(id):
+    """Returns dictionary of video info with matching ID."""
     video = valid_id(Video, id)
     
     if not video: 
@@ -113,6 +116,7 @@ def get_one_video(id):
 
 @video_bp.route("", methods = ["POST"])
 def create_video():
+    """Creates video in database and returns new video ID and 201 if successful."""
     request_body = request.get_json()
 
     if "title" not in request_body:
@@ -123,8 +127,8 @@ def create_video():
         return {"details": "Request body must include total_inventory."}, 400
     
     new_video = Video(title = request_body["title"],
-                            release_date = request_body["release_date"],
-                            total_inventory = request_body["total_inventory"])
+                        release_date = request_body["release_date"],
+                        total_inventory = request_body["total_inventory"])
 
     db.session.add(new_video)
     db.session.commit()
@@ -132,6 +136,7 @@ def create_video():
 
 @video_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_video(id):
+    """Deletes video from database and returns ID of deleted video."""
     video = valid_id(Video, id)
 
     if not video: 
@@ -143,6 +148,8 @@ def delete_one_video(id):
 
 @video_bp.route("/<id>", methods = ["PUT"])
 def update_one_video(id):
+    """Updates video in database and \
+    returns dictionary with updated video infomation."""
     video = valid_id(Video, id)
 
     if not video: 

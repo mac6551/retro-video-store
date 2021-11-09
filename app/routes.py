@@ -53,9 +53,18 @@ def create_customer():
     new_customer = Customer(name = request_body["name"],
                             phone = request_body["phone"],
                             postal_code = request_body["postal_code"])
-                            # register_at = datetime.date)
 
     db.session.add(new_customer)
     db.session.commit()
-    
     return {"id": new_customer.id}, 201
+
+@customer_bp.route("/<id>", methods = ["DELETE"])
+def delete_one_customer(id):
+    customer = valid_id(Customer, id)
+
+    if not customer: 
+        return {"message": f"Customer {id} was not found"}, 404
+
+    db.session.delete(customer)
+    db.session.commit()
+    return {"id": int(id)}, 200

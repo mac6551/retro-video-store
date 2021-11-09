@@ -130,3 +130,35 @@ def create_video():
     db.session.commit()
     return {"id": new_video.id}, 201
 
+@video_bp.route("/<id>", methods = ["DELETE"])
+def delete_one_video(id):
+    video = valid_id(Video, id)
+
+    if not video: 
+        return {"message": f"Video {id} was not found"}, 404
+
+    db.session.delete(video)
+    db.session.commit()
+    return {"id": int(id)}, 200
+
+@video_bp.route("/<id>", methods = ["PUT"])
+def update_one_video(id):
+    video = valid_id(Video, id)
+
+    if not video: 
+        return {"message": f"Video {id} was not found"}, 404
+
+    request_body = request.get_json()
+
+    if "title" not in request_body or "release_date" not in request_body \
+        or "total_inventory" not in request_body:
+        return {"details": "invalid data"}, 400
+
+    video.title= request_body["title"]
+    video.total_inventory = request_body["total_inventory"]
+    video.release_date = request_body["release_date"]
+
+    video = video.to_dict()
+    db.session.commit()
+
+    return video, 200

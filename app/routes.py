@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request, abort
+from flask.wrappers import Request
 from app.models.customer import Customer
 from app.models.video import Video
 from app import db
@@ -68,3 +69,26 @@ def delete_one_customer(id):
     db.session.delete(customer)
     db.session.commit()
     return {"id": int(id)}, 200
+
+@customer_bp.route("/<id>", methods = ["PUT"])
+def update_one_customer(id):
+    customer = valid_id(Customer, id)
+
+    if not customer: 
+        return {"message": f"Customer {id} was not found"}, 404
+
+    request_body = request.get_json()
+
+    if "name" not in request_body or "phone" not in request_body \
+        or "postal_code" not in request_body:
+        return {"details": "invalid data"}, 400
+
+    customer.name = request_body["name"]
+    customer.phone = request_body["phone"]
+    customer.postal_code = request_body["postal_code"]
+
+    customer = customer.to_dict()
+    db.session.commit()
+
+    return customer, 200
+

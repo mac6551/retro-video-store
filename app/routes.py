@@ -92,3 +92,41 @@ def update_one_customer(id):
 
     return customer, 200
 
+@video_bp.route("", methods = ["GET"])
+def get_videos():
+    videos = Video.query.all()
+    videos_response = [video.to_dict() for video in videos]
+
+    return jsonify(videos_response), 200
+
+
+@video_bp.route("/<id>", methods = ["GET"])
+def get_one_video(id):
+    video = valid_id(Video, id)
+    
+    if not video: 
+        return {"message": f"Video {id} was not found"}, 404
+
+    video = video.to_dict()
+
+    return video, 200
+
+@video_bp.route("", methods = ["POST"])
+def create_video():
+    request_body = request.get_json()
+
+    if "title" not in request_body:
+        return {"details": "Request body must include title."}, 400
+    if "release_date" not in request_body:
+        return {"details": "Request body must include release_date."}, 400
+    if "total_inventory" not in request_body:
+        return {"details": "Request body must include total_inventory."}, 400
+    
+    new_video = Video(title = request_body["title"],
+                            release_date = request_body["release_date"],
+                            total_inventory = request_body["total_inventory"])
+
+    db.session.add(new_video)
+    db.session.commit()
+    return {"id": new_video.id}, 201
+

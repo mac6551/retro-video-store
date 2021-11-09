@@ -1,3 +1,4 @@
+from sqlalchemy.orm import backref
 from app import db
 
 class Customer(db.Model):
@@ -6,6 +7,7 @@ class Customer(db.Model):
     postal_code = db.Column(db.String, nullable=False)
     phone = db.Column(db.String)
     register_at = db.Column(db.DateTime)
+    videos = db.relationship("Rental", backref="customer")
 
     def to_dict(self):
         """Converts model info into a dictionary"""

@@ -143,3 +143,5 @@ dmypy.json
 cython_debug/
 
 migrations/
+
+app/mac_fucks_around_with_routes.py

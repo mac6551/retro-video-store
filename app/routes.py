@@ -132,7 +132,8 @@ def create_video():
 
     db.session.add(new_video)
     db.session.commit()
-    return {"id": new_video.id}, 201
+
+    return new_video.to_dict(), 201
 
 @video_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_video(id):
@@ -161,7 +162,7 @@ def update_one_video(id):
         or "total_inventory" not in request_body:
         return {"details": "invalid data"}, 400
 
-    video.title= request_body["title"]
+    video.title = request_body["title"]
     video.total_inventory = request_body["total_inventory"]
     video.release_date = request_body["release_date"]
 

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import backref
 from app import db
+from app.models.rental import Rental
 
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -7,7 +8,7 @@ class Customer(db.Model):
     postal_code = db.Column(db.String, nullable=False)
     phone = db.Column(db.String)
     register_at = db.Column(db.DateTime)
-    videos = db.relationship("Rental", backref="customer")
+    video = db.relationship("Rental", back_populates="Customer")
 
     def to_dict(self):
         """Converts model info into a dictionary"""

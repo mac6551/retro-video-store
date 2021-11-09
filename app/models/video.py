@@ -1,11 +1,13 @@
+from sqlalchemy.orm import backref
 from app import db
+from app.models.rental import Rental
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     title = db.Column(db.String, nullable=False)
     release_date = db.Column(db.DateTime)
     total_inventory = db.Column(db.Integer)
-    customer_id = db.Column(db.Integer)
+    customer = db.relationship("Rental", back_populates="video")
 
     def to_dict(self):
         """Converts model info into a dictionary"""

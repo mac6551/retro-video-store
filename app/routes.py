@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
+rental_bp = Blueprint("rental", __name__, url_prefix = "/rentals")
 
 def valid_id(model, id):
     """Returns instance of model with matching ID."""
@@ -170,3 +171,20 @@ def update_one_video(id):
     db.session.commit()
 
     return video, 200
+
+@rental_bp.route("/check-out", methods = ["POST"])
+def check_out_video(): 
+    request_body = request.get_json()
+
+    if "customer_id" not in request_body:
+        return {"details": "Request body must include customer_id."}, 400
+    if "video_id" not in request_body:
+        return {"details": "Request body must include video_id."}, 400
+
+    customer = valid_id(Customer, customer_id)
+    video = valid_id(Video, video_id)
+
+    if not customer: 
+        return {"message": f"Customer {customer_id} was not found"}, 404
+    if not video: 
+        return {"message": f"Video {video_id} was not found"}, 404

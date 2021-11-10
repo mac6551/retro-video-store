@@ -199,23 +199,17 @@ def check_out_video():
     new_rental = Rental(due_date = due_date,
                         customer_id = customer_id,
                         video_id = video_id)
+    
+    video.checked_out_count += 1
+    customer.checked_out_count += 1
 
-    checked_out_inventory = {}
+    available_inventory = video.total_inventory - video.checked_out_count
 
-    if new_rental.video not in checked_out_inventory:
-        checked_out_inventory[new_rental.video_id] = 0
-    checked_out_inventory[new_rental.video_id] += 1
-
-    videos_checked_out_count = 0
-    videos_checked_out_count += 1
-
-    available_inventory = video.total_inventory - checked_out_inventory[new_rental.video_id]
-
-    if checked_out_inventory[new_rental.video_id] < 0:
+    if available_inventory < 0:
         return {"message": "Could not perform checkout"}, 400
 
     return {"video_id": video_id,
             "customer_id": customer_id,
-            "videos_checked_out_count": videos_checked_out_count,
+            "videos_checked_out_count": customer.checked_out_count,
             "available_inventory": available_inventory
             }

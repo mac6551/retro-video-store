@@ -180,7 +180,9 @@ def check_out_video():
         return {"details": "Request body must include customer_id."}, 400
     if "video_id" not in request_body:
         return {"details": "Request body must include video_id."}, 400
-
+    
+    customer_id = request_body["customer_id"]
+    video_id = request_body["video_id"]
     customer = valid_id(Customer, customer_id)
     video = valid_id(Video, video_id)
 
@@ -188,3 +190,5 @@ def check_out_video():
         return {"message": f"Customer {customer_id} was not found"}, 404
     if not video: 
         return {"message": f"Video {video_id} was not found"}, 404
+
+    return "blah"

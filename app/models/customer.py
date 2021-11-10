@@ -8,7 +8,6 @@ class Customer(db.Model):
     postal_code = db.Column(db.String, nullable=False)
     phone = db.Column(db.String)
     register_at = db.Column(db.DateTime)
-    video = db.relationship("Rental", back_populates="Customer")
 
     def to_dict(self):
         """Converts model info into a dictionary"""

@@ -199,17 +199,37 @@ def check_out_video():
     new_rental = Rental(due_date = due_date,
                         customer_id = customer_id,
                         video_id = video_id)
-    
-    video.checked_out_count += 1
-    customer.checked_out_count += 1
 
-    available_inventory = video.total_inventory - video.checked_out_count
+    db.session.add(new_rental)
+    db.session.commit()
+
+    available_inventory = video.total_inventory - len(new_rental.video.rentals)
+    videos_checked_out_count = len(new_rental.customer.rentals)
 
     if available_inventory < 0:
+        db.session.delete(new_rental)
+        db.session.commit()
         return {"message": "Could not perform checkout"}, 400
 
     return {"video_id": video_id,
             "customer_id": customer_id,
-            "videos_checked_out_count": customer.checked_out_count,
+            "videos_checked_out_count": videos_checked_out_count,
             "available_inventory": available_inventory
-            }
+            }, 200
+
+# @rental_bp.route("/check-in", methods=["POST"])
+# def check_in_video():
+#     request_body = request.get_json()
+#     customer_id = request_body["customer_id"]
+#     video_id = request_body["video_id"]
+#     customer = valid_id(Customer, customer_id)
+#     video = valid_id(Video, video_id)
+
+#     if not customer: 
+#         return {"message": f"Customer {customer_id} was not found"}, 404
+#     if not video: 
+#         return {"message": f"Video {video_id} was not found"}, 404
+    
+#     # need 400 to be if customer and video does not match a current rental
+#     # something that checks if video and customer match a current rental. 
+#         return {"details": "stuff"}, 400

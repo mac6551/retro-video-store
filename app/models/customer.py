@@ -8,7 +8,6 @@ class Customer(db.Model):
     postal_code = db.Column(db.String, nullable=False)
     phone = db.Column(db.String)
     register_at = db.Column(db.DateTime)
-    checked_out_count = db.Column(db.Integer, default=0)
 
     def to_dict(self):
         """Converts model info into a dictionary"""

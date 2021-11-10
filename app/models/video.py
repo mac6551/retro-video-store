@@ -7,7 +7,6 @@ class Video(db.Model):
     title = db.Column(db.String, nullable=False)
     release_date = db.Column(db.DateTime)
     total_inventory = db.Column(db.Integer)
-    checked_out_count = db.Column(db.Integer, default=0)
 
     def to_dict(self):
         """Converts model info into a dictionary"""

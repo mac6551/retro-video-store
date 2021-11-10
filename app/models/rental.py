@@ -10,7 +10,7 @@ class Rental(db.Model):
     customer = db.relationship("Customer", backref="rentals")
     video = db.relationship("Video", backref="rentals")
 
-    # refactor into one to dict
+    # refactor into one to dict?
     def check_out_to_dict(self): 
         if self.id:
             return {

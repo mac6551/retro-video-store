@@ -1,22 +1,17 @@
-from flask import Blueprint, jsonify, request, abort
-# from flask.wrappers import Request
+from flask import Blueprint, jsonify, request
 from app.models.customer import Customer
 from app.models.video import Video
+from app.models.video import Rental
+from datetime import date, timedelta
+from .helper_functions import *
 from app import db
 from dotenv import load_dotenv
 
 load_dotenv()
+
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
 rental_bp = Blueprint("rental", __name__, url_prefix = "/rentals")
-
-def valid_id(model, id):
-    """Returns instance of model with matching ID."""
-    try:
-        id = int(id)
-    except:
-        abort(400, {"error": "invalid id"})
-    return model.query.get(id)
 
 @customer_bp.route("", methods = ["GET"])
 def get_customers():
@@ -172,23 +167,60 @@ def update_one_video(id):
 
     return video, 200
 
-@rental_bp.route("/check-out", methods = ["POST"])
-def check_out_video(): 
+def create_checked_out_inventory():
+    checked_out_inventory = {}
+    videos = Video.query.all()
+    for video in videos:
+        checked_out_inventory[video.id] = 0
+    return checked_out_inventory
+
+def calculate_available_inventory(video):
+    checked_out_inventory = create_checked_out_inventory()
+
+    if video not in checked_out_inventory:
+        checked_out_inventory[video] = 0
+    checked_out_inventory[video] += 1
+    available_inventory = video.total_inventory - checked_out_inventory[video.id]
+    return available_inventory
+
+@rental_bp.route("check-out", methods = ["POST"])
+def check_video_in_or_out(): 
     request_body = request.get_json()
 
     if "customer_id" not in request_body:
         return {"details": "Request body must include customer_id."}, 400
     if "video_id" not in request_body:
         return {"details": "Request body must include video_id."}, 400
-    
+
     customer_id = request_body["customer_id"]
     video_id = request_body["video_id"]
+    due_date = date.today() + timedelta(7) 
     customer = valid_id(Customer, customer_id)
     video = valid_id(Video, video_id)
-
+    
     if not customer: 
         return {"message": f"Customer {customer_id} was not found"}, 404
     if not video: 
         return {"message": f"Video {video_id} was not found"}, 404
 
-    return "blah"
+    new_rental = Rental(due_date = due_date,
+                        customer_id = customer_id,
+                        video_id = video_id)
+
+    db.session.add(new_rental)
+    db.session.commit()
+
+    available_inventory = calculate_available_inventory(new_rental.video)
+    videos_checked_out_count = 0
+    videos_checked_out_count += 1
+
+    if available_inventory < 0:
+        return {"message": "Could not perform checkout"}, 400
+
+    return {
+            "customer_id": new_rental.customer_id,
+            "video_id": new_rental.video_id,
+            "due_date": new_rental.due_date,
+            "videos_checked_out_count": videos_checked_out_count,
+            "available_inventory": available_inventory
+        }

@@ -2,7 +2,9 @@ from flask import Blueprint, jsonify, request, abort
 # from flask.wrappers import Request
 from app.models.customer import Customer
 from app.models.video import Video
+from app.models.rental import Rental
 from app import db
+from datetime import date, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -172,6 +174,7 @@ def update_one_video(id):
 
     return video, 200
 
+
 @rental_bp.route("/check-out", methods = ["POST"])
 def check_out_video(): 
     request_body = request.get_json()
@@ -191,4 +194,28 @@ def check_out_video():
     if not video: 
         return {"message": f"Video {video_id} was not found"}, 404
 
-    return "blah"
+    due_date = date.today() + timedelta(days=7)
+
+    new_rental = Rental(due_date = due_date,
+                        customer_id = customer_id,
+                        video_id = video_id)
+
+    checked_out_inventory = {}
+
+    if new_rental.video not in checked_out_inventory:
+        checked_out_inventory[new_rental.video_id] = 0
+    checked_out_inventory[new_rental.video_id] += 1
+
+    videos_checked_out_count = 0
+    videos_checked_out_count += 1
+
+    available_inventory = video.total_inventory - checked_out_inventory[new_rental.video_id]
+
+    if checked_out_inventory[new_rental.video_id] < 0:
+        return {"message": "Could not perform checkout"}, 400
+
+    return {"video_id": video_id,
+            "customer_id": customer_id,
+            "videos_checked_out_count": videos_checked_out_count,
+            "available_inventory": available_inventory
+            }

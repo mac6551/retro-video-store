@@ -4,6 +4,7 @@ from app.models.video import Video
 from app.models.rental import Rental
 from app import db
 from datetime import date, timedelta
+from .helper_functions import *
 
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
@@ -21,7 +22,6 @@ def get_customers():
 def get_one_customer(id):
     """Returns dictionary of customer info with matching ID."""
     customer = valid_id(Customer, id)
-    
     if not customer: 
         return {"message": f"Customer {id} was not found"}, 404
 
@@ -34,8 +34,8 @@ def create_customer():
     """Adds customer to database and returns new customer ID and 201."""
     request_body = request.get_json()
 
-    if "name" not in request_body:
-        return {"details": "Request body must include name."}, 400
+    if "name" not in request_body:       # valid_input(request_body, "name")
+        return {"details": f"Request body must include name."}, 400     
     if "phone" not in request_body:
         return {"details": "Request body must include phone."}, 400
     if "postal_code" not in request_body:
@@ -45,20 +45,19 @@ def create_customer():
                             phone = request_body["phone"],
                             postal_code = request_body["postal_code"])
 
-    db.session.add(new_customer)
-    db.session.commit()
+    add_to_database(new_customer)
+
     return {"id": new_customer.id}, 201
 
 @customer_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_customer(id):
     """Deletes customer and returns ID of deleted customer."""
     customer = valid_id(Customer, id)
-
     if not customer: 
         return {"message": f"Customer {id} was not found"}, 404
 
-    db.session.delete(customer)
-    db.session.commit()
+    remove_from_database(customer)
+
     return {"id": int(id)}, 200
 
 @customer_bp.route("/<id>", methods = ["PUT"])
@@ -66,7 +65,6 @@ def update_one_customer(id):
     """Updates cusomter in database and \
         returns dictionary with updated customer infomation."""
     customer = valid_id(Customer, id)
-
     if not customer: 
         return {"message": f"Customer {id} was not found"}, 404
 
@@ -98,10 +96,8 @@ def get_videos():
 def get_one_video(id):
     """Returns dictionary of video info with matching ID."""
     video = valid_id(Video, id)
-    
     if not video: 
         return {"message": f"Video {id} was not found"}, 404
-
     video = video.to_dict()
 
     return video, 200
@@ -122,8 +118,7 @@ def create_video():
                         release_date = request_body["release_date"],
                         total_inventory = request_body["total_inventory"])
 
-    db.session.add(new_video)
-    db.session.commit()
+    add_to_database(new_video)
 
     return new_video.to_dict(), 201
 
@@ -131,12 +126,11 @@ def create_video():
 def delete_one_video(id):
     """Deletes video from database and returns ID of deleted video."""
     video = valid_id(Video, id)
-
     if not video: 
         return {"message": f"Video {id} was not found"}, 404
 
-    db.session.delete(video)
-    db.session.commit()
+    remove_from_database(video)
+
     return {"id": int(id)}, 200
 
 @video_bp.route("/<id>", methods = ["PUT"])
@@ -144,7 +138,6 @@ def update_one_video(id):
     """Updates video in database and \
     returns dictionary with updated video infomation."""
     video = valid_id(Video, id)
-
     if not video: 
         return {"message": f"Video {id} was not found"}, 404
 
@@ -164,7 +157,7 @@ def update_one_video(id):
     return video, 200
 
 @rental_bp.route("/<rental_action>", methods = ["POST"])
-def check_out_video(rental_action): 
+def check_video_in_or_out(rental_action): 
     request_body = request.get_json()
 
     if "customer_id" not in request_body:
@@ -177,11 +170,11 @@ def check_out_video(rental_action):
     due_date = date.today() + timedelta(7) 
     customer = valid_id(Customer, customer_id)
     video = valid_id(Video, video_id)
-    
+
     if not customer: 
-        return {"message": f"Customer {customer_id} was not found"}, 404
+        return {"message": f"Customer {id} was not found"}, 404
     if not video: 
-        return {"message": f"Video {video_id} was not found"}, 404
+        return {"message": f"Video {id} was not found"}, 404
 
     if rental_action == "check-out":
         due_date = date.today() + timedelta(days=7)
@@ -190,8 +183,7 @@ def check_out_video(rental_action):
                         customer_id = customer_id,
                         video_id = video_id)
 
-        db.session.add(rental)
-        db.session.commit()
+        add_to_database(rental)
     
     if rental_action == "check-in":
         rental = Rental.query.filter(customer_id==customer_id,video_id==video_id).first()
@@ -199,23 +191,24 @@ def check_out_video(rental_action):
         if not rental:
             return {"message": f"No outstanding rentals for customer {customer_id} and video {video_id}"}, 400
 
-        db.session.delete(rental)
-        db.session.commit()
+        remove_from_database(rental)
 
-    available_inventory = video.total_inventory - len(rental.video.rentals)
-    videos_checked_out_count = len(rental.customer.rentals)
+    rental = rental.to_dict()
+    return rental
 
-    if available_inventory < 0:
-        db.session.delete(rental)
-        db.session.commit()
-        return {"message": "Could not perform checkout"}, 400
+    # available_inventory = video.total_inventory - len(rental.video.rentals)
+    # videos_checked_out_count = len(rental.customer.rentals)
 
-    return {
-            "video_id": video_id,
-            "customer_id": customer_id,
-            "videos_checked_out_count": videos_checked_out_count,
-            "available_inventory": available_inventory
-            }, 200
+    # if available_inventory < 0:
+    #     remove_from_database(rental)
+    # #     return {"message": "Could not perform checkout"}, 400
+
+    # return {
+    #         "video_id": video_id,
+    #         "customer_id": customer_id,
+    #         "videos_checked_out_count": videos_checked_out_count,
+    #         "available_inventory": available_inventory
+    #         }, 200
 
 
         

@@ -10,10 +10,11 @@ class Customer(db.Model):
     def to_dict(self):
         """Converts model info into a dictionary"""
         if self.id: 
-            return {
+            customer = {
                 "id": self.id,
                 "name": self.name,
                 "postal_code": self.postal_code,
                 "phone": self.phone, 
                 "register_at": self.register_at
             }
+        return customer

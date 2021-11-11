@@ -9,10 +9,10 @@ class Video(db.Model):
     def to_dict(self):
         """Converts model info into a dictionary"""
         if self.id:
-            video_dict = {
+            video = {
                 "id": self.id,
                 "title": self.title,
                 "release_date": self.release_date,
                 "total_inventory": self.total_inventory 
             }
-        return video_dict
+        return video

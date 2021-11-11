@@ -1,6 +1,4 @@
-from sqlalchemy.orm import backref
 from app import db
-from app.models.rental import Rental
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

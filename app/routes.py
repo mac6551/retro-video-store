@@ -1,13 +1,9 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, abort
 from app.models.customer import Customer
 from app.models.video import Video
-from app.models.video import Rental
-from datetime import date, timedelta
-from .helper_functions import *
+from app.models.rental import Rental
 from app import db
-from dotenv import load_dotenv
-
-load_dotenv()
+from datetime import date, timedelta
 
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
@@ -167,24 +163,8 @@ def update_one_video(id):
 
     return video, 200
 
-def create_checked_out_inventory():
-    checked_out_inventory = {}
-    videos = Video.query.all()
-    for video in videos:
-        checked_out_inventory[video.id] = 0
-    return checked_out_inventory
-
-def calculate_available_inventory(video):
-    checked_out_inventory = create_checked_out_inventory()
-
-    if video not in checked_out_inventory:
-        checked_out_inventory[video] = 0
-    checked_out_inventory[video] += 1
-    available_inventory = video.total_inventory - checked_out_inventory[video.id]
-    return available_inventory
-
-@rental_bp.route("check-out", methods = ["POST"])
-def check_video_in_or_out(): 
+@rental_bp.route("/<rental_action>", methods = ["POST"])
+def check_out_video(rental_action): 
     request_body = request.get_json()
 
     if "customer_id" not in request_body:
@@ -203,24 +183,39 @@ def check_video_in_or_out():
     if not video: 
         return {"message": f"Video {video_id} was not found"}, 404
 
-    new_rental = Rental(due_date = due_date,
+    if rental_action == "check-out":
+        due_date = date.today() + timedelta(days=7)
+
+        rental = Rental(due_date = due_date,
                         customer_id = customer_id,
                         video_id = video_id)
 
-    db.session.add(new_rental)
-    db.session.commit()
+        db.session.add(rental)
+        db.session.commit()
+    
+    if rental_action == "check-in":
+        rental = Rental.query.filter(customer_id==customer_id,video_id==video_id).first()
 
-    available_inventory = calculate_available_inventory(new_rental.video)
-    videos_checked_out_count = 0
-    videos_checked_out_count += 1
+        if not rental:
+            return {"message": f"No outstanding rentals for customer {customer_id} and video {video_id}"}, 400
+
+        db.session.delete(rental)
+        db.session.commit()
+
+    available_inventory = video.total_inventory - len(rental.video.rentals)
+    videos_checked_out_count = len(rental.customer.rentals)
 
     if available_inventory < 0:
+        db.session.delete(rental)
+        db.session.commit()
         return {"message": "Could not perform checkout"}, 400
 
     return {
-            "customer_id": new_rental.customer_id,
-            "video_id": new_rental.video_id,
-            "due_date": new_rental.due_date,
+            "video_id": video_id,
+            "customer_id": customer_id,
             "videos_checked_out_count": videos_checked_out_count,
             "available_inventory": available_inventory
-        }
+            }, 200
+
+
+        

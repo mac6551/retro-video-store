@@ -86,47 +86,47 @@ def test_checkout_video_no_inventory(client, one_checked_out_video):
 #     assert response_body["videos_checked_out_count"] == 0
 #     assert response_body["available_inventory"] == 1
 
-# def test_checkin_video_no_customer_id(client, one_checked_out_video):
-#     response = client.post("/rentals/check-in", json={
-#         "video_id": 1
-#     })
+def test_checkin_video_no_customer_id(client, one_checked_out_video):
+    response = client.post("/rentals/check-in", json={
+        "video_id": 1
+    })
 
-#     assert response.status_code == 400
+    assert response.status_code == 400
 
-# def test_checkin_video_no_video_id(client, one_checked_out_video):
-#     response = client.post("/rentals/check-in", json={
-#         "customer_id": 1
-#     })
+def test_checkin_video_no_video_id(client, one_checked_out_video):
+    response = client.post("/rentals/check-in", json={
+        "customer_id": 1
+    })
 
-#     assert response.status_code == 400
+    assert response.status_code == 400
 
-# def test_checkin_video_not_found(client, one_checked_out_video):
-#     response = client.post("/rentals/check-in", json={
-#         "customer_id": 2,
-#         "video_id": 1
-#     })
+def test_checkin_video_not_found(client, one_checked_out_video):
+    response = client.post("/rentals/check-in", json={
+        "customer_id": 2,
+        "video_id": 1
+    })
 
-#     assert response.status_code == 404
+    assert response.status_code == 404
 
-# def test_checkin_customer_not_found(client, one_checked_out_video):
-#     response = client.post("/rentals/check-in", json={
-#         "customer_id": 1,
-#         "video_id": 2
-#     })
+def test_checkin_customer_not_found(client, one_checked_out_video):
+    response = client.post("/rentals/check-in", json={
+        "customer_id": 1,
+        "video_id": 2
+    })
 
-#     assert response.status_code == 404
+    assert response.status_code == 404
 
-# def test_checkin_video_not_checked_out(client, one_video, one_customer):
+def test_checkin_video_not_checked_out(client, one_video, one_customer):
 
-#     response = client.post("/rentals/check-in", json={
-#         "customer_id": 1,
-#         "video_id": 1
-#     })
+    response = client.post("/rentals/check-in", json={
+        "customer_id": 1,
+        "video_id": 1
+    })
 
-#     response_body = response.get_json()
+    response_body = response.get_json()
 
-#     assert response.status_code == 400
-#     assert response_body == {"message": "No outstanding rentals for customer 1 and video 1"}
+    assert response.status_code == 400
+    assert response_body == {"message": "No outstanding rentals for customer 1 and video 1"}
     
 
 # def test_rentals_by_video(client, one_checked_out_video):

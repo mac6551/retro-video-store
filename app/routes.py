@@ -227,37 +227,5 @@ def check_out_video(rental_action):
             "available_inventory": available_inventory
             }, 200
 
-# @rental_bp.route("/check-in", methods=["POST"])
-# def check_in_video():
-#     request_body = request.get_json()
-
-#     if "customer_id" not in request_body:
-#         return {"details": "Request body must include customer_id."}, 400
-#     if "video_id" not in request_body:
-#         return {"details": "Request body must include video_id."}, 400
-
-#     customer_id = request_body["customer_id"]
-#     video_id = request_body["video_id"]
-#     # customer = valid_id(Customer, customer_id)
-#     # video = valid_id(Video, video_id)
-
-#     rental = Rental.query.filter(customer_id==customer_id,video_id==video_id).first()
-
-#     if not rental:
-#         return {"details": "Rental not found"}, 400
-#     # if not customer: 
-#     #     return {"message": f"Customer {customer_id} was not found"}, 404
-#     # if not video: 
-#     #     return {"message": f"Video {video_id} was not found"}, 404
-    
-#     db.session.delete(rental)
-#     db.session.commit()
-    
-#     return {
-#         "customer_id": customer_id,
-#         "video_id": video_id,
-#         "videos_checked_out_count": ,
-#         "available_inventory": 
-#     }, 200
 
         

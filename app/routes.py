@@ -6,6 +6,7 @@ from app.models.rental import Rental
 from app import db
 from datetime import date, timedelta
 from dotenv import load_dotenv
+from sqlalchemy.sql import exists
 
 load_dotenv()
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
@@ -174,7 +175,6 @@ def update_one_video(id):
 
     return video, 200
 
-
 @rental_bp.route("/check-out", methods = ["POST"])
 def check_out_video(): 
     request_body = request.get_json()
@@ -217,19 +217,27 @@ def check_out_video():
             "available_inventory": available_inventory
             }, 200
 
-# @rental_bp.route("/check-in", methods=["POST"])
-# def check_in_video():
-#     request_body = request.get_json()
-#     customer_id = request_body["customer_id"]
-#     video_id = request_body["video_id"]
-#     customer = valid_id(Customer, customer_id)
-#     video = valid_id(Video, video_id)
+@rental_bp.route("/check-in", methods=["POST"])
+def check_in_video():
+    request_body = request.get_json()
+    if "customer_id" not in request_body:
+        return {"details": "Request body must include customer_id."}, 400
+    if "video_id" not in request_body:
+        return {"details": "Request body must include video_id."}, 400
+    customer_id = request_body["customer_id"]
+    video_id = request_body["video_id"]
+    customer = valid_id(Customer, customer_id)
+    video = valid_id(Video, video_id)
+    rental = Rental.query(exists().where(customer_id==customer_id and video_id==video_id))
 
-#     if not customer: 
-#         return {"message": f"Customer {customer_id} was not found"}, 404
-#     if not video: 
-#         return {"message": f"Video {video_id} was not found"}, 404
+    #if not rental:
+     #   return {"details": "Rental not found"}, 400
+    if not customer: 
+        return {"message": f"Customer {customer_id} was not found"}, 404
+    if not video: 
+        return {"message": f"Video {video_id} was not found"}, 404
     
-#     # need 400 to be if customer and video does not match a current rental
-#     # something that checks if video and customer match a current rental. 
-#         return {"details": "stuff"}, 400
+    db.session.delete(rental)
+    db.session.commit()
+    
+        

@@ -1,13 +1,10 @@
 from flask import Blueprint, jsonify, request, abort
-# from flask.wrappers import Request
 from app.models.customer import Customer
 from app.models.video import Video
 from app.models.rental import Rental
 from app import db
 from datetime import date, timedelta
-from dotenv import load_dotenv
 
-load_dotenv()
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
 rental_bp = Blueprint("rental", __name__, url_prefix = "/rentals")

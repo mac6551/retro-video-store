@@ -6,7 +6,6 @@ from app.models.rental import Rental
 from app import db
 from datetime import date, timedelta
 from dotenv import load_dotenv
-from sqlalchemy.sql import exists
 
 load_dotenv()
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
@@ -175,8 +174,8 @@ def update_one_video(id):
 
     return video, 200
 
-@rental_bp.route("/check-out", methods = ["POST"])
-def check_out_video(): 
+@rental_bp.route("/<rental_action>", methods = ["POST"])
+def check_out_video(rental_action): 
     request_body = request.get_json()
 
     if "customer_id" not in request_body:
@@ -194,50 +193,71 @@ def check_out_video():
     if not video: 
         return {"message": f"Video {video_id} was not found"}, 404
 
-    due_date = date.today() + timedelta(days=7)
+    if rental_action == "check-out":
+        due_date = date.today() + timedelta(days=7)
 
-    new_rental = Rental(due_date = due_date,
+        rental = Rental(due_date = due_date,
                         customer_id = customer_id,
                         video_id = video_id)
 
-    db.session.add(new_rental)
-    db.session.commit()
+        db.session.add(rental)
+        db.session.commit()
+    
+    if rental_action == "check-in":
+        rental = Rental.query.filter(customer_id==customer_id,video_id==video_id).first()
 
-    available_inventory = video.total_inventory - len(new_rental.video.rentals)
-    videos_checked_out_count = len(new_rental.customer.rentals)
+        if not rental:
+            return {"message": f"No outstanding rentals for customer {customer_id} and video {video_id}"}, 400
+
+        db.session.delete(rental)
+        db.session.commit()
+
+    available_inventory = video.total_inventory - len(rental.video.rentals)
+    videos_checked_out_count = len(rental.customer.rentals)
 
     if available_inventory < 0:
-        db.session.delete(new_rental)
+        db.session.delete(rental)
         db.session.commit()
         return {"message": "Could not perform checkout"}, 400
 
-    return {"video_id": video_id,
+    return {
+            "video_id": video_id,
             "customer_id": customer_id,
             "videos_checked_out_count": videos_checked_out_count,
             "available_inventory": available_inventory
             }, 200
 
-@rental_bp.route("/check-in", methods=["POST"])
-def check_in_video():
-    request_body = request.get_json()
-    if "customer_id" not in request_body:
-        return {"details": "Request body must include customer_id."}, 400
-    if "video_id" not in request_body:
-        return {"details": "Request body must include video_id."}, 400
-    customer_id = request_body["customer_id"]
-    video_id = request_body["video_id"]
-    customer = valid_id(Customer, customer_id)
-    video = valid_id(Video, video_id)
-    rental = Rental.query(exists().where(customer_id==customer_id and video_id==video_id))
+# @rental_bp.route("/check-in", methods=["POST"])
+# def check_in_video():
+#     request_body = request.get_json()
 
-    #if not rental:
-     #   return {"details": "Rental not found"}, 400
-    if not customer: 
-        return {"message": f"Customer {customer_id} was not found"}, 404
-    if not video: 
-        return {"message": f"Video {video_id} was not found"}, 404
+#     if "customer_id" not in request_body:
+#         return {"details": "Request body must include customer_id."}, 400
+#     if "video_id" not in request_body:
+#         return {"details": "Request body must include video_id."}, 400
+
+#     customer_id = request_body["customer_id"]
+#     video_id = request_body["video_id"]
+#     # customer = valid_id(Customer, customer_id)
+#     # video = valid_id(Video, video_id)
+
+#     rental = Rental.query.filter(customer_id==customer_id,video_id==video_id).first()
+
+#     if not rental:
+#         return {"details": "Rental not found"}, 400
+#     # if not customer: 
+#     #     return {"message": f"Customer {customer_id} was not found"}, 404
+#     # if not video: 
+#     #     return {"message": f"Video {video_id} was not found"}, 404
     
-    db.session.delete(rental)
-    db.session.commit()
+#     db.session.delete(rental)
+#     db.session.commit()
     
+#     return {
+#         "customer_id": customer_id,
+#         "video_id": video_id,
+#         "videos_checked_out_count": ,
+#         "available_inventory": 
+#     }, 200
+
         

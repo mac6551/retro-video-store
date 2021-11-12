@@ -232,5 +232,8 @@ def rentals_by_video(id):
     if not video: 
         return {"message": f"Video {id} was not found"}, 404
 
-    print(video.rentals)
-    print(video.rentals.customer)
+    rentals = video.rentals
+    customer = [rental.customer.to_dict() for rental in rentals]
+    return jsonify(customer), 200
+
+    

@@ -226,14 +226,22 @@ def check_out_video(rental_action):
 
 @video_bp.route("/<id>/rentals", methods = ["GET"])
 def rentals_by_video(id):
-    request_body = request.get_json()
     video = valid_id(Video, id)
 
     if not video: 
         return {"message": f"Video {id} was not found"}, 404
 
     rentals = video.rentals
-    customer = [rental.customer.to_dict() for rental in rentals]
-    return jsonify(customer), 200
+    customers = [rental.customer.to_dict() for rental in rentals]
+    return jsonify(customers), 200
 
-    
+@customer_bp.route("<id>/rentals", methods = ["GET"])
+def rentals_by_customer(id):
+    customer = valid_id(Customer, id)
+
+    if not customer: 
+        return {"message": f"Customer {id} was not found"}, 404
+
+    rentals = customer.rentals
+    videos = [rental.video.to_dict() for rental in rentals]
+    return jsonify(videos), 200

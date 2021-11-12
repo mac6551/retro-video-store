@@ -1,21 +1,15 @@
+from operator import add
 from flask import Blueprint, jsonify, request, abort
 from app.models.customer import Customer
 from app.models.video import Video
 from app.models.rental import Rental
 from app import db
 from datetime import date, timedelta
+from .helper_functions import *
 
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
 rental_bp = Blueprint("rental", __name__, url_prefix = "/rentals")
-
-def valid_id(model, id):
-    """Returns instance of model with matching ID."""
-    try:
-        id = int(id)
-    except:
-        abort(400, {"error": "invalid id"})
-    return model.query.get(id)
 
 @customer_bp.route("", methods = ["GET"])
 def get_customers():
@@ -53,8 +47,8 @@ def create_customer():
                             phone = request_body["phone"],
                             postal_code = request_body["postal_code"])
 
-    db.session.add(new_customer)
-    db.session.commit()
+    add_to_database(new_customer)
+
     return {"id": new_customer.id}, 201
 
 @customer_bp.route("/<id>", methods = ["DELETE"])
@@ -67,11 +61,10 @@ def delete_one_customer(id):
 
     if customer.rentals:
         for rental in customer.rentals:
-            db.session.delete(rental)
-            db.session.commit()
+            delete_from_database(rental)
 
-    db.session.delete(customer)
-    db.session.commit()
+    delete_from_database(customer)
+
     return {"id": int(id)}, 200
 
 @customer_bp.route("/<id>", methods = ["PUT"])
@@ -135,8 +128,7 @@ def create_video():
                         release_date = request_body["release_date"],
                         total_inventory = request_body["total_inventory"])
 
-    db.session.add(new_video)
-    db.session.commit()
+    add_to_database(new_video)
 
     return new_video.to_dict(), 201
 
@@ -150,11 +142,10 @@ def delete_one_video(id):
 
     if video.rentals:
         for rental in video.rentals:
-            db.session.delete(rental)
-            db.session.commit()
+            delete_from_database(rental)
             
-    db.session.delete(video)
-    db.session.commit()
+    delete_from_database(video)
+
     return {"id": int(id)}, 200
 
 @video_bp.route("/<id>", methods = ["PUT"])
@@ -207,8 +198,7 @@ def check_out_video(rental_action):
                         customer_id = customer_id,
                         video_id = video_id)
 
-        db.session.add(rental)
-        db.session.commit()
+        add_to_database(rental)
     
     if rental_action == "check-in":
         rental = Rental.query.filter(customer_id==customer_id,video_id==video_id).first()
@@ -216,15 +206,13 @@ def check_out_video(rental_action):
         if not rental:
             return {"message": f"No outstanding rentals for customer {customer_id} and video {video_id}"}, 400
 
-        db.session.delete(rental)
-        db.session.commit()
+        delete_from_database(rental)
 
     available_inventory = video.total_inventory - len(rental.video.rentals)
     videos_checked_out_count = len(rental.customer.rentals)
 
     if available_inventory < 0:
-        db.session.delete(rental)
-        db.session.commit()
+        delete_from_database(rental)
         return {"message": "Could not perform checkout"}, 400
 
     return {

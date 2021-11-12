@@ -65,6 +65,11 @@ def delete_one_customer(id):
     if not customer: 
         return {"message": f"Customer {id} was not found"}, 404
 
+    if customer.rentals:
+        for rental in customer.rentals:
+            db.session.delete(rental)
+            db.session.commit()
+
     db.session.delete(customer)
     db.session.commit()
     return {"id": int(id)}, 200
@@ -143,6 +148,11 @@ def delete_one_video(id):
     if not video: 
         return {"message": f"Video {id} was not found"}, 404
 
+    if video.rentals:
+        for rental in video.rentals:
+            db.session.delete(rental)
+            db.session.commit()
+            
     db.session.delete(video)
     db.session.commit()
     return {"id": int(id)}, 200
@@ -232,10 +242,11 @@ def rentals_by_video(id):
         return {"message": f"Video {id} was not found"}, 404
 
     rentals = video.rentals
-    customers = [rental.customer.to_dict() for rental in rentals]
-    return jsonify(customers), 200
+    customer = [rental.customer.to_dict() for rental in rentals]
 
-@customer_bp.route("<id>/rentals", methods = ["GET"])
+    return jsonify(customer), 200
+
+@customer_bp.route("/<id>/rentals", methods = ["GET"])
 def rentals_by_customer(id):
     customer = valid_id(Customer, id)
 
@@ -244,4 +255,5 @@ def rentals_by_customer(id):
 
     rentals = customer.rentals
     videos = [rental.video.to_dict() for rental in rentals]
+    
     return jsonify(videos), 200

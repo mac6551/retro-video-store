@@ -18,3 +18,6 @@ def delete_from_database(model_instance):
     """Deletes valid instance of a model from detabase"""
     db.session.delete(model_instance)
     db.session.commit()
+
+
+

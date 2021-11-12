@@ -224,5 +224,13 @@ def check_out_video(rental_action):
             "available_inventory": available_inventory
             }, 200
 
+@video_bp.route("/<id>/rentals", methods = ["GET"])
+def rentals_by_video(id):
+    request_body = request.get_json()
+    video = valid_id(Video, id)
 
-        
+    if not video: 
+        return {"message": f"Video {id} was not found"}, 404
+
+    print(video.rentals)
+    print(video.rentals.customer)

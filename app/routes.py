@@ -33,12 +33,7 @@ def create_customer():
     """Adds customer to database and returns new customer ID and 201."""
     request_body = request.get_json()
 
-    if "name" not in request_body:
-        return {"details": "Request body must include name."}, 400
-    if "phone" not in request_body:
-        return {"details": "Request body must include phone."}, 400
-    if "postal_code" not in request_body:
-        return {"details": "Request body must include postal_code."}, 400
+    valid_input(request_body, Customer)
     
     new_customer = Customer(name = request_body["name"],
                             phone = request_body["phone"],
@@ -70,9 +65,7 @@ def update_one_customer(id):
 
     request_body = request.get_json()
 
-    if "name" not in request_body or "phone" not in request_body \
-        or "postal_code" not in request_body:
-        return {"details": "invalid data"}, 400
+    valid_input(request_body, Customer)
 
     customer.name = request_body["name"]
     customer.phone = request_body["phone"]
@@ -106,12 +99,7 @@ def create_video():
     """Creates video in database and returns new video ID and 201 if successful."""
     request_body = request.get_json()
 
-    if "title" not in request_body:
-        return {"details": "Request body must include title."}, 400
-    if "release_date" not in request_body:
-        return {"details": "Request body must include release_date."}, 400
-    if "total_inventory" not in request_body:
-        return {"details": "Request body must include total_inventory."}, 400
+    valid_input(request_body, Video)
     
     new_video = Video(title = request_body["title"],
                         release_date = request_body["release_date"],
@@ -143,9 +131,10 @@ def update_one_video(id):
 
     request_body = request.get_json()
 
-    if "title" not in request_body or "release_date" not in request_body \
-        or "total_inventory" not in request_body:
-        return {"details": "invalid data"}, 400
+    valid_input(request_body, Video)
+    # if "title" not in request_body or "release_date" not in request_body \
+    #     or "total_inventory" not in request_body:
+    #     return {"details": "invalid data"}, 400
 
     video.title = request_body["title"]
     video.total_inventory = request_body["total_inventory"]

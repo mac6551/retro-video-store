@@ -1,19 +1,18 @@
-from flask import abort, request
+from flask import abort, request, make_response
 from .routes import *
 from app import db
 
-# GET HELP WITH THIS FRIEND
-def valid_id(model, id):
-    """Returns instance of model with matching ID."""
+def valid_id(model, id, model_string):
+    """Returns instance of model with matching ID.
+        Returns 404 error with custom message if object not found."""
     try:
         id = int(id)
     except:
         abort(400, {"error": "invalid id"})
-    
-    model = model.query.get(id)
 
-    # if not model: 
-    #     abort(404, {"message": f"{model} {id} was not found"})
+    model = model.query.get(id)
+    if not model: 
+        abort(make_response({"message": f"{model_string} {id} was not found"}, 404))
 
     return model
 
@@ -21,10 +20,3 @@ def valid_input(request_body, input):
     if input not in request_body:
         abort(400, {"details": f"Request body must include {input}."})
 
-def add_to_database(item):
-    db.session.add(item)
-    db.session.commit()
-
-def remove_from_database(item):
-    db.session.delete(item)
-    db.session.commit()

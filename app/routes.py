@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, jsonify, request
 from app.models.customer import Customer
 from app.models.video import Video
 from app.models.rental import Rental
@@ -14,6 +14,7 @@ rental_bp = Blueprint("rental", __name__, url_prefix = "/rentals")
 def get_customers():
     """Returns list of dictionaries of customer info."""
     customers = Customer.query.all()
+
     customers_response = [customer.to_dict() for customer in customers]
 
     return jsonify(customers_response), 200
@@ -21,9 +22,7 @@ def get_customers():
 @customer_bp.route("/<id>", methods = ["GET"])
 def get_one_customer(id):
     """Returns dictionary of customer info with matching ID."""
-    customer = valid_id(Customer, id)
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
+    customer = valid_id(Customer, id, "Customer")
 
     customer = customer.to_dict()
 
@@ -52,9 +51,7 @@ def create_customer():
 @customer_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_customer(id):
     """Deletes customer and returns ID of deleted customer."""
-    customer = valid_id(Customer, id)
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
+    customer = valid_id(Customer, id, "Customer")
 
     remove_from_database(customer)
 
@@ -64,9 +61,7 @@ def delete_one_customer(id):
 def update_one_customer(id):
     """Updates cusomter in database and \
         returns dictionary with updated customer infomation."""
-    customer = valid_id(Customer, id)
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
+    customer = valid_id(Customer, id, "Customer")
 
     request_body = request.get_json()
 
@@ -95,9 +90,8 @@ def get_videos():
 @video_bp.route("/<id>", methods = ["GET"])
 def get_one_video(id):
     """Returns dictionary of video info with matching ID."""
-    video = valid_id(Video, id)
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    video = valid_id(Video, id, "Video")
+
     video = video.to_dict()
 
     return video, 200
@@ -125,9 +119,7 @@ def create_video():
 @video_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_video(id):
     """Deletes video from database and returns ID of deleted video."""
-    video = valid_id(Video, id)
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    video = valid_id(Video, id, "Video")
 
     remove_from_database(video)
 
@@ -137,9 +129,7 @@ def delete_one_video(id):
 def update_one_video(id):
     """Updates video in database and \
     returns dictionary with updated video infomation."""
-    video = valid_id(Video, id)
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    video = valid_id(Video, id, "Video")
 
     request_body = request.get_json()
 
@@ -168,13 +158,8 @@ def check_video_in_or_out(rental_action):
     customer_id = request_body["customer_id"]
     video_id = request_body["video_id"]
     due_date = date.today() + timedelta(7) 
-    customer = valid_id(Customer, customer_id)
-    video = valid_id(Video, video_id)
-
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    customer = valid_id(Customer, customer_id, "Customer")
+    video = valid_id(Video, video_id, "Video")
 
     if rental_action == "check-out":
         due_date = date.today() + timedelta(days=7)
@@ -195,20 +180,6 @@ def check_video_in_or_out(rental_action):
 
     rental = rental.to_dict()
     return rental
-
-    # available_inventory = video.total_inventory - len(rental.video.rentals)
-    # videos_checked_out_count = len(rental.customer.rentals)
-
-    # if available_inventory < 0:
-    #     remove_from_database(rental)
-    # #     return {"message": "Could not perform checkout"}, 400
-
-    # return {
-    #         "video_id": video_id,
-    #         "customer_id": customer_id,
-    #         "videos_checked_out_count": videos_checked_out_count,
-    #         "available_inventory": available_inventory
-    #         }, 200
 
 
         

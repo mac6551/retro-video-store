@@ -22,10 +22,7 @@ def get_customers():
 @customer_bp.route("/<id>", methods = ["GET"])
 def get_one_customer(id):
     """Returns dictionary of customer info with matching ID."""
-    customer = valid_id(Customer, id)
-    
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
+    customer = valid_id(Customer, id, "customer")
 
     customer = customer.to_dict()
 
@@ -53,11 +50,9 @@ def create_customer():
 
 @customer_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_customer(id):
-    """Deletes customer and returns ID of deleted customer."""
-    customer = valid_id(Customer, id)
-
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
+    """Deletes customer, and rental tied to customer if present, and
+        returns ID of deleted customer."""
+    customer = valid_id(Customer, id, "customer")
 
     if customer.rentals:
         for rental in customer.rentals:
@@ -69,12 +64,9 @@ def delete_one_customer(id):
 
 @customer_bp.route("/<id>", methods = ["PUT"])
 def update_one_customer(id):
-    """Updates cusomter in database and \
+    """Updates cusomter in database and 
         returns dictionary with updated customer infomation."""
-    customer = valid_id(Customer, id)
-
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
+    customer = valid_id(Customer, id, "customer")
 
     request_body = request.get_json()
 
@@ -103,10 +95,7 @@ def get_videos():
 @video_bp.route("/<id>", methods = ["GET"])
 def get_one_video(id):
     """Returns dictionary of video info with matching ID."""
-    video = valid_id(Video, id)
-    
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    video = valid_id(Video, id, "Video")
 
     video = video.to_dict()
 
@@ -134,11 +123,9 @@ def create_video():
 
 @video_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_video(id):
-    """Deletes video from database and returns ID of deleted video."""
-    video = valid_id(Video, id)
-
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    """Deletes video from database, and related rental if present, and 
+    returns ID of deleted video."""
+    video = valid_id(Video, id, "Video")
 
     if video.rentals:
         for rental in video.rentals:
@@ -152,10 +139,7 @@ def delete_one_video(id):
 def update_one_video(id):
     """Updates video in database and \
     returns dictionary with updated video infomation."""
-    video = valid_id(Video, id)
-
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    video = valid_id(Video, id, "video")
 
     request_body = request.get_json()
 
@@ -183,8 +167,8 @@ def check_out_video(rental_action):
     
     customer_id = request_body["customer_id"]
     video_id = request_body["video_id"]
-    customer = valid_id(Customer, customer_id)
-    video = valid_id(Video, video_id)
+    customer = valid_id(Customer, customer_id, "customer")
+    video = valid_id(Video, video_id, "video")
 
     if not customer: 
         return {"message": f"Customer {customer_id} was not found"}, 404

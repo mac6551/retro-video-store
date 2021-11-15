@@ -9,7 +9,7 @@ class Rental(db.Model):
     video_id = db.Column(db.Integer, db.ForeignKey("video.id"), nullable=False)
     customer = db.relationship("Customer", backref="rentals")
     video = db.relationship("Video", backref="rentals")
-           
+
     def to_dict(self, available_inventory): 
         """Returns model info as a dictionary. 
         Adds videos_checked_out_count and available_inventory for requirements

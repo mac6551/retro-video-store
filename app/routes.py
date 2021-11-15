@@ -1,11 +1,11 @@
-from operator import add
-from flask import Blueprint, jsonify, request, abort
-from app.models.customer import Customer
+from app import db
+from .helper_functions import *
 from app.models.video import Video
 from app.models.rental import Rental
-from app import db
+from app.models.customer import Customer
 from datetime import date, timedelta
-from .helper_functions import *
+from flask import Blueprint, jsonify, request
+
 
 customer_bp = Blueprint("customer", __name__, url_prefix = "/customers")
 video_bp = Blueprint("video", __name__, url_prefix = "/videos")
@@ -21,7 +21,8 @@ def get_customers():
 
 @customer_bp.route("/<id>", methods = ["GET"])
 def get_one_customer(id):
-    """Returns dictionary of customer info with matching ID."""
+    """Returns dictionary of customer info or
+    404 error if customer doesn't exist."""
     customer = valid_id(Customer, id, "customer")
 
     customer = customer.to_dict()
@@ -30,7 +31,8 @@ def get_one_customer(id):
 
 @customer_bp.route("", methods = ["POST"])
 def create_customer():
-    """Adds customer to database and returns new customer ID and 201."""
+    """Adds customer to database and returns new customer ID and 201 or 
+    400 error if request body is missing name, phone, or postal code."""
     request_body = request.get_json()
 
     valid_input(request_body, Customer)
@@ -45,8 +47,9 @@ def create_customer():
 
 @customer_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_customer(id):
-    """Deletes customer, and rental tied to customer if present, and
-        returns ID of deleted customer."""
+    """Deletes customer and rental tied to customer if present.
+        Returns ID of deleted customer. 
+        Returns 404 if customer does not exist."""
     customer = valid_id(Customer, id, "customer")
 
     if customer.rentals:
@@ -59,8 +62,10 @@ def delete_one_customer(id):
 
 @customer_bp.route("/<id>", methods = ["PUT"])
 def update_one_customer(id):
-    """Updates cusomter in database and 
-        returns dictionary with updated customer infomation."""
+    """Updates customer in database and 
+        returns dictionary with updated customer infomation. 
+        Returns 404 if customer not found or 
+        400 if request body is missing name, phone, or postal code."""
     customer = valid_id(Customer, id, "customer")
 
     request_body = request.get_json()
@@ -87,7 +92,8 @@ def get_videos():
 
 @video_bp.route("/<id>", methods = ["GET"])
 def get_one_video(id):
-    """Returns dictionary of video info with matching ID."""
+    """Returns dictionary of video info or
+    404 error if video doesn't exist."""
     video = valid_id(Video, id, "Video")
 
     video = video.to_dict()
@@ -96,7 +102,8 @@ def get_one_video(id):
 
 @video_bp.route("", methods = ["POST"])
 def create_video():
-    """Creates video in database and returns new video ID and 201 if successful."""
+    """Adds video to database and returns new video ID and 201 or 
+    400 error if request body is missing title, release_date, or total_inventory."""
     request_body = request.get_json()
 
     valid_input(request_body, Video)
@@ -111,8 +118,9 @@ def create_video():
 
 @video_bp.route("/<id>", methods = ["DELETE"])
 def delete_one_video(id):
-    """Deletes video from database, and related rental if present, and 
-    returns ID of deleted video."""
+    """Deletes video and rental tied to video if present.
+        Returns ID of deleted video. 
+        Returns 404 if video does not exist."""
     video = valid_id(Video, id, "Video")
 
     if video.rentals:
@@ -125,16 +133,15 @@ def delete_one_video(id):
 
 @video_bp.route("/<id>", methods = ["PUT"])
 def update_one_video(id):
-    """Updates video in database and \
-    returns dictionary with updated video infomation."""
+    """Updates video in database and 
+        returns dictionary with updated video infomation. 
+        Returns 404 if video not found or 
+        400 if request body is missing title, release_date, or total_inventory."""
     video = valid_id(Video, id, "video")
 
     request_body = request.get_json()
 
     valid_input(request_body, Video)
-    # if "title" not in request_body or "release_date" not in request_body \
-    #     or "total_inventory" not in request_body:
-    #     return {"details": "invalid data"}, 400
 
     video.title = request_body["title"]
     video.total_inventory = request_body["total_inventory"]
@@ -146,23 +153,20 @@ def update_one_video(id):
     return video, 200
 
 @rental_bp.route("/<rental_action>", methods = ["POST"])
-def check_out_video(rental_action): 
+def check_video_out_or_in(rental_action): 
+    """Creates new instance of rental and adds to database for checkout.
+    Deletes instance of rental from database for checkin.
+    Returns dictionary info of rental and 200 if successful.
+    Returns 400 if missing request body incomplete or no inventory for check out.
+    Returns 404 if customer or video do not exist."""
     request_body = request.get_json()
-
-    if "customer_id" not in request_body:
-        return {"details": "Request body must include customer_id."}, 400
-    if "video_id" not in request_body:
-        return {"details": "Request body must include video_id."}, 400
+    valid_input(request_body, Rental)
     
     customer_id = request_body["customer_id"]
     video_id = request_body["video_id"]
     customer = valid_id(Customer, customer_id, "customer")
     video = valid_id(Video, video_id, "video")
 
-    if not customer: 
-        return {"message": f"Customer {customer_id} was not found"}, 404
-    if not video: 
-        return {"message": f"Video {video_id} was not found"}, 404
 
     if rental_action == "check-out":
         due_date = date.today() + timedelta(days=7)
@@ -181,26 +185,18 @@ def check_out_video(rental_action):
 
         delete_from_database(rental)
 
-    available_inventory = video.total_inventory - len(rental.video.rentals)
-    videos_checked_out_count = len(rental.customer.rentals)
-
-    if available_inventory < 0:
+    available_inventory = calculate_available_inventory(rental)
+    if available_inventory < 0: 
         delete_from_database(rental)
         return {"message": "Could not perform checkout"}, 400
 
-    return {
-            "video_id": video_id,
-            "customer_id": customer_id,
-            "videos_checked_out_count": videos_checked_out_count,
-            "available_inventory": available_inventory
-            }, 200
+    rental = rental.to_dict(available_inventory)
+    return rental, 200
 
 @video_bp.route("/<id>/rentals", methods = ["GET"])
 def rentals_by_video(id):
-    video = valid_id(Video, id)
-
-    if not video: 
-        return {"message": f"Video {id} was not found"}, 404
+    """Returns a list of dictionaries with customer's info who have a specific rental video."""
+    video = valid_id(Video, id, "Video")
 
     rentals = video.rentals
     customer = [rental.customer.to_dict() for rental in rentals]
@@ -209,10 +205,8 @@ def rentals_by_video(id):
 
 @customer_bp.route("/<id>/rentals", methods = ["GET"])
 def rentals_by_customer(id):
-    customer = valid_id(Customer, id)
-
-    if not customer: 
-        return {"message": f"Customer {id} was not found"}, 404
+    """Returns a list of dictionaries with video info rented by a specific customer."""
+    customer = valid_id(Customer, id, "Customer")
 
     rentals = customer.rentals
     videos = [rental.video.to_dict() for rental in rentals]

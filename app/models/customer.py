@@ -10,7 +10,7 @@ class Customer(db.Model):
     register_at = db.Column(db.DateTime)
 
     def to_dict(self):
-        """Converts model info into a dictionary"""
+        """Returns model info as a dictionary."""
         if self.id: 
             return {
                 "id": self.id,

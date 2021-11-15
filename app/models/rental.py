@@ -1,4 +1,4 @@
-from sqlalchemy.orm import backref
+
 from app import db
 
 class Rental(db.Model):
@@ -9,32 +9,17 @@ class Rental(db.Model):
     video_id = db.Column(db.Integer, db.ForeignKey("video.id"), nullable=False)
     customer = db.relationship("Customer", backref="rentals")
     video = db.relationship("Video", backref="rentals")
-
-    # refactor into one to dict?
-    # def calculate_available_inventory(self, video_id): 
-    #     total_inventory = self.video.total_inventory
-    #     rentals = []
-    #     if self.video_id == video_id: 
-    #         rentals.append(self)
-    #     available_inventory = total_inventory - len(rentals)
-        
-
-    def check_out_to_dict(self): 
+           
+    def to_dict(self, available_inventory): 
+        """Returns model info as a dictionary. 
+        Adds videos_checked_out_count and available_inventory for requirements
+        of route's check in/out function"""
+        videos_checked_out_count = len(self.customer.rentals)
         if self.id:
             return {
                 "customer_id": self.customer_id,
                 "video_id": self.video_id,
                 "due_date": self.due_date,
-                "videos_checked_out_count": len(self.Customer.video),
-                "available_inventory": self.video.available_inventory
+                "videos_checked_out_count": videos_checked_out_count,
+                "available_inventory": available_inventory
             }
-
-    def check_in_to_dict(self): 
-        if self.id:
-            return {
-                "customer_id": self.customer_id,
-                "video_id": self.video_id,
-                "videos_checked_out_count": len(self.Customer.video),
-                "available_inventory": self.video.total_inventory
-            }
-        

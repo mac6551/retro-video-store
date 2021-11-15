@@ -1,6 +1,5 @@
 from sqlalchemy.orm import backref
 from app import db
-from app.models.rental import Rental
 
 class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -9,7 +8,7 @@ class Video(db.Model):
     total_inventory = db.Column(db.Integer)
 
     def to_dict(self):
-        """Converts model info into a dictionary"""
+        """Returns model info as a dictionary"""
         if self.id:
             video_dict = {
                 "id": self.id,
